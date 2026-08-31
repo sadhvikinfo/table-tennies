@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  phone          String?
+  role           Role      @default(PLAYER)
+  hashedPassword String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  bookings       Booking[]
+
+  @@map("users")
+}
+
+model Table {
+  id                  String    @id @default(cuid())
+  name                String
+  locationDescription String?
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  bookings            Booking[]
+
+  @@map("tables")
+}
+
+model Slot {
+  id              String    @id @default(cuid())
+  startTime       String    // "HH:MM" e.g. "09:00"
+  endTime         String    // "HH:MM" e.g. "09:30"
+  durationMinutes Int       @default(30)
+  displayOrder    Int
+  bookings        Booking[]
+
+  @@map("slots")
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  userId      String
+  tableId     String
+  slotId      String
+  bookingDate DateTime      @db.Date
+  status      BookingStatus @default(CONFIRMED)
+  qrToken     String        @unique @default(cuid())
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  table Table @relation(fields: [tableId], references: [id])
+  slot  Slot  @relation(fields: [slotId], references: [id])
+
+  // Prevent double-booking: one active booking per table+slot+date
+  @@unique([tableId, slotId, bookingDate, status])
+  @@index([userId])
+  @@index([bookingDate])
+  @@index([tableId, bookingDate])
+  @@map("bookings")
+}
+
+model VenueSettings {
+  id              String   @id @default(cuid())
+  openTime        String   @default("06:00")  // "HH:MM"
+  closeTime       String   @default("22:00")  // "HH:MM"
+  slotDurationMin Int      @default(30)
+  maxBookingsPerUserPerDay Int @default(3)
+  allowCancellationUntilMinsBefore Int @default(120) // 2 hours
+  updatedAt       DateTime @updatedAt
+
+  @@map("venue_settings")
+}
