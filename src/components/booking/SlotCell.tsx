@@ -1,11 +1,12 @@
 'use client'
 
-import { cn, formatTime } from '@/lib/utils'
+import { cn, formatTime, isPastSlot } from '@/lib/utils'
 import type { SlotWithStatus } from '@/types'
 import { Lock, CheckCircle, Clock, Users } from 'lucide-react'
 
 interface SlotCellProps {
   slot: SlotWithStatus
+  date: string
   onClick: (slot: SlotWithStatus) => void
   disabled?: boolean
 }
@@ -43,12 +44,13 @@ const stateConfig = {
   },
 }
 
-export function SlotCell({ slot, onClick, disabled }: SlotCellProps) {
-  const config = stateConfig[slot.status as keyof typeof stateConfig] ?? stateConfig.AVAILABLE
+export function SlotCell({ slot, date, onClick, disabled }: SlotCellProps) {
+  const isPast = slot.status === 'PAST' || isPastSlot(date, slot.endTime)
+  const currentStatus = isPast ? 'PAST' : slot.status
+  const config = stateConfig[currentStatus as keyof typeof stateConfig] ?? stateConfig.AVAILABLE
   const Icon = config.icon
 
-  const isBooked = slot.status === 'BOOKED' || slot.status === 'MY_BOOKING'
-  const isPast = slot.status === 'PAST'
+  const isBooked = (slot.status === 'BOOKED' || slot.status === 'MY_BOOKING') && !isPast
 
   const handleClick = () => {
     if (disabled || isPast || slot.status === 'LOCKED') return
@@ -99,7 +101,7 @@ export function SlotCell({ slot, onClick, disabled }: SlotCellProps) {
       )}
 
       {/* Hover shimmer for available slots */}
-      {slot.status === 'AVAILABLE' && (
+      {slot.status === 'AVAILABLE' && !isPast && (
         <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
       )}
     </button>

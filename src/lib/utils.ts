@@ -33,9 +33,10 @@ export function getTodayDate(): Date {
 }
 
 export function isPastSlot(dateStr: string, endTime: string): boolean {
+  const [year, month, day] = dateStr.split('-').map(Number)
   const [hour, min] = endTime.split(':').map(Number)
-  const slotEnd = parseISO(`${dateStr}T${String(hour).padStart(2,'0')}:${String(min).padStart(2,'0')}:00`)
-  return slotEnd < new Date()
+  const slotEnd = new Date(year, month - 1, day, hour, min, 0)
+  return slotEnd.getTime() < Date.now()
 }
 
 export function minutesUntilSlot(dateStr: string, startTime: string): number {

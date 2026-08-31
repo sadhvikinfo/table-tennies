@@ -154,6 +154,7 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
           <SlotCell
             key={slot.id}
             slot={slot}
+            date={date}
             onClick={handleSlotClick}
             disabled={lockLoading}
           />
