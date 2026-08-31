@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     let status: string
 
     if (past) {
-      status = 'BOOKED' // treat past as unavailable
+      status = 'PAST'
     } else if (booked) {
       status = booked.userId === session.user.id ? 'MY_BOOKING' : 'BOOKED'
     } else if (lockedByUserId) {

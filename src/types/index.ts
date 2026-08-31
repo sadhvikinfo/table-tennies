@@ -7,7 +7,7 @@ export interface SlotWithStatus {
   startTime: string
   endTime: string
   displayOrder: number
-  status: 'AVAILABLE' | 'LOCKED' | 'BOOKED' | 'MY_BOOKING' | 'MY_HOLD'
+  status: 'AVAILABLE' | 'LOCKED' | 'BOOKED' | 'MY_BOOKING' | 'MY_HOLD' | 'PAST'
   lockedByMe?: boolean
   lockExpiresAt?: number // unix timestamp ms
   bookingId?: string

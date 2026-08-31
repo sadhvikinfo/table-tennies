@@ -36,6 +36,11 @@ const stateConfig = {
     icon: Clock,
     label: 'Holding',
   },
+  PAST: {
+    className: 'bg-white/[0.03] border-white/5 text-muted-foreground/40 cursor-not-allowed opacity-40',
+    icon: Clock,
+    label: 'Expired',
+  },
 }
 
 export function SlotCell({ slot, onClick, disabled }: SlotCellProps) {
@@ -43,10 +48,10 @@ export function SlotCell({ slot, onClick, disabled }: SlotCellProps) {
   const Icon = config.icon
 
   const isBooked = slot.status === 'BOOKED' || slot.status === 'MY_BOOKING'
+  const isPast = slot.status === 'PAST'
 
   const handleClick = () => {
-    if (disabled) return
-    if (slot.status === 'LOCKED') return
+    if (disabled || isPast || slot.status === 'LOCKED') return
     onClick(slot)
   }
 
@@ -58,7 +63,7 @@ export function SlotCell({ slot, onClick, disabled }: SlotCellProps) {
   return (
     <button
       onClick={handleClick}
-      disabled={disabled || slot.status === 'LOCKED'}
+      disabled={disabled || isPast || slot.status === 'LOCKED'}
       aria-label={`Slot ${slot.startTime}–${slot.endTime}: ${config.label}`}
       className={cn(
         'relative flex flex-col items-center justify-center rounded-xl border p-2.5 transition-all duration-200 select-none group min-h-[82px] w-full',

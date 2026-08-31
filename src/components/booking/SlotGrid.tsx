@@ -21,6 +21,7 @@ const legendItems = [
   { label: 'Held by Other', className: 'slot-locked' },
   { label: 'Booked (Click to view)', className: 'slot-booked' },
   { label: 'Your Booking', className: 'slot-my-booking' },
+  { label: 'Expired', className: 'bg-white/10 border-white/10 opacity-50' },
 ]
 
 export function SlotGrid({ tableId, date }: SlotGridProps) {
