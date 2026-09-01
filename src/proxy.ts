@@ -13,21 +13,21 @@ export default auth((req) => {
       pathname.startsWith('/booking') ||
       pathname.startsWith('/admin')
     ) {
-      return NextResponse.redirect(new URL('/login', req.url))
+      return NextResponse.redirect(new URL('/login', req.nextUrl))
     }
   }
 
   // Redirect non-admin users from admin routes
   if (session && session.user.role !== 'ADMIN' && pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
   }
 
   // Redirect logged-in users away from auth pages
   if (session && (pathname === '/login' || pathname === '/register')) {
     if (session.user.role === 'ADMIN') {
-      return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+      return NextResponse.redirect(new URL('/admin/dashboard', req.nextUrl))
     }
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
   }
 
   return NextResponse.next()
