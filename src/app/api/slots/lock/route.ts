@@ -22,6 +22,15 @@ export async function POST(req: NextRequest) {
   const { tableId, slotId, date } = parsed.data
   const userId = session.user.id
 
+  // Reject weekend locking attempts
+  const targetDate = new Date(date + 'T00:00:00')
+  if (targetDate.getDay() === 0 || targetDate.getDay() === 6) {
+    return NextResponse.json(
+      { held: false, reason: 'Office slots are only available on weekdays (Monday – Friday).' },
+      { status: 400 }
+    )
+  }
+
   // Check if this user already holds this lock
   const currentHolder = await getLockHolder(tableId, slotId, date)
   if (currentHolder === userId) {

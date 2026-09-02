@@ -25,6 +25,12 @@ export async function GET(req: NextRequest) {
 
   const { tableId, date } = parsed.data
 
+  // Return empty slots for weekends
+  const targetDate = new Date(date + 'T00:00:00')
+  if (targetDate.getDay() === 0 || targetDate.getDay() === 6) {
+    return NextResponse.json({ slots: [], isWeekend: true })
+  }
+
   // Fetch all slots
   const [slots, bookings, lockedSlots] = await Promise.all([
     prisma.slot.findMany({ orderBy: { displayOrder: 'asc' } }),

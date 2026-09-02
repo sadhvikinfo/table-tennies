@@ -7,8 +7,8 @@ import { BookingModal } from './BookingModal'
 import { SlotViewModal } from './SlotViewModal'
 import { useSlotGrid } from '@/hooks/useSlotGrid'
 import type { SlotWithStatus } from '@/types'
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Loader2, RefreshCw, AlertCircle, Clock } from 'lucide-react'
+import { cn, isPastSlot } from '@/lib/utils'
 
 interface SlotGridProps {
   tableId: string
@@ -16,12 +16,11 @@ interface SlotGridProps {
 }
 
 const legendItems = [
-  { label: 'Available', className: 'slot-available' },
+  { label: 'Available (Click to hold)', className: 'slot-available' },
   { label: 'Your Hold', className: 'slot-my-hold' },
   { label: 'Held by Other', className: 'slot-locked' },
-  { label: 'Booked (Click to view)', className: 'slot-booked' },
+  { label: 'Booked (Click to view players)', className: 'slot-booked' },
   { label: 'Your Booking', className: 'slot-my-booking' },
-  { label: 'Expired', className: 'bg-white/10 border-white/10 opacity-50' },
 ]
 
 export function SlotGrid({ tableId, date }: SlotGridProps) {
@@ -34,21 +33,23 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
   const [lockExpiresAt, setLockExpiresAt] = useState<number | undefined>()
   const [lockError, setLockError] = useState<string | null>(null)
 
+  // Filter out expired / past slots completely
+  const activeSlots = slots.filter((slot) => {
+    return slot.status !== 'PAST' && !isPastSlot(date, slot.endTime)
+  })
+
   const handleSlotClick = async (slot: SlotWithStatus) => {
     if (slot.status === 'MY_BOOKING') {
-      // Navigate to booking detail using router
       router.push(`/booking/${slot.bookingId}`)
       return
     }
 
     if (slot.status === 'BOOKED') {
-      // Show details modal (who is playing)
       setViewingSlot(slot)
       return
     }
 
     if (slot.status === 'MY_HOLD') {
-      // Already holding — open modal directly
       setSelectedSlot(slot)
       setLockExpiresAt(slot.lockExpiresAt)
       return
@@ -87,7 +88,7 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading time slots...</p>
+        <p className="text-sm font-medium text-muted-foreground">Loading time slots...</p>
       </div>
     )
   }
@@ -97,7 +98,7 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <AlertCircle className="h-8 w-8 text-destructive" />
         <p className="text-sm text-destructive">{error}</p>
-        <button onClick={fetchSlots} className="text-xs text-primary hover:underline">
+        <button onClick={fetchSlots} className="text-xs text-primary hover:underline font-semibold">
           Retry
         </button>
       </div>
@@ -105,27 +106,30 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 items-center">
-        {legendItems.map(({ label, className }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <div className={cn('h-3 w-3 rounded-sm border', className)} />
-            <span className="text-xs text-muted-foreground">{label}</span>
-          </div>
-        ))}
+    <div className="space-y-5">
+      {/* Legend & Refresh */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
+        <div className="flex flex-wrap items-center gap-3">
+          {legendItems.map(({ label, className }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div className={cn('h-3 w-3 rounded-sm border shrink-0', className)} />
+              <span className="text-xs text-muted-foreground font-medium">{label}</span>
+            </div>
+          ))}
+        </div>
+
         <button
           onClick={fetchSlots}
-          className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-white/10 px-2.5 py-1 rounded-lg transition-all"
         >
-          <RefreshCw className="h-3 w-3" />
-          Refresh
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span>Refresh</span>
         </button>
       </div>
 
       {/* Lock error toast */}
       {lockError && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {lockError}
         </div>
@@ -133,37 +137,48 @@ export function SlotGrid({ tableId, date }: SlotGridProps) {
 
       {/* Lock acquiring overlay */}
       {lockLoading && (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
+        <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary animate-pulse">
           <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
           Securing your slot...
         </div>
       )}
 
-      {/* Slot grid — responsive: 2 cols mobile → 4 cols tablet+ */}
-      <div
-        className={cn(
-          'grid gap-2',
-          'grid-cols-2',
-          'sm:grid-cols-3',
-          'md:grid-cols-4',
-          'lg:grid-cols-5',
-          'xl:grid-cols-6'
-        )}
-      >
-        {slots.map((slot) => (
-          <SlotCell
-            key={slot.id}
-            slot={slot}
-            date={date}
-            onClick={handleSlotClick}
-            disabled={lockLoading}
-          />
-        ))}
-      </div>
+      {/* Slot grid */}
+      {activeSlots.length > 0 && (
+        <div
+          className={cn(
+            'grid gap-3',
+            'grid-cols-2',
+            'sm:grid-cols-3',
+            'md:grid-cols-4',
+            'lg:grid-cols-5',
+            'xl:grid-cols-6'
+          )}
+        >
+          {activeSlots.map((slot) => (
+            <SlotCell
+              key={slot.id}
+              slot={slot}
+              date={date}
+              onClick={handleSlotClick}
+              disabled={lockLoading}
+            />
+          ))}
+        </div>
+      )}
 
-      {slots.length === 0 && (
-        <div className="py-16 text-center text-muted-foreground text-sm">
-          No slots available for this date.
+      {/* Empty state when all slots have expired or no slots remain */}
+      {activeSlots.length === 0 && (
+        <div className="glass rounded-2xl p-12 text-center text-muted-foreground border border-white/10 space-y-3">
+          <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-muted-foreground">
+            <Clock className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-bold text-foreground">No active upcoming slots available for this date</p>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              All time slots for today have already passed or are fully booked. Select another upcoming weekday from the calendar above!
+            </p>
+          </div>
         </div>
       )}
 

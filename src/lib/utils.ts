@@ -32,6 +32,19 @@ export function getTodayDate(): Date {
   return new Date(format(new Date(), 'yyyy-MM-dd'))
 }
 
+export function isWeekendDay(date: Date): boolean {
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
+export function getNextWeekday(date: Date = new Date()): Date {
+  const cur = new Date(date)
+  while (isWeekendDay(cur)) {
+    cur.setDate(cur.getDate() + 1)
+  }
+  return cur
+}
+
 export function isPastSlot(dateStr: string, endTime: string): boolean {
   const [year, month, day] = dateStr.split('-').map(Number)
   const [hour, min] = endTime.split(':').map(Number)

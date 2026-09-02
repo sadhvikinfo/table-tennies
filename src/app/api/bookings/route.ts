@@ -24,6 +24,15 @@ export async function POST(req: NextRequest) {
   const { tableId, slotId, date, notes } = parsed.data
   const userId = session.user.id
 
+  // Reject weekend booking attempts
+  const targetDate = new Date(date + 'T00:00:00')
+  if (targetDate.getDay() === 0 || targetDate.getDay() === 6) {
+    return NextResponse.json(
+      { error: 'Bookings are only available on office weekdays (Monday – Friday).' },
+      { status: 400 }
+    )
+  }
+
   // 1. Verify Redis lock is held by this user
   const lockHolder = await getLockHolder(tableId, slotId, date)
   if (lockHolder !== userId) {
